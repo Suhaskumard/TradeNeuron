@@ -71,7 +71,6 @@ TradeNeuron/
 │
 ├── requirements.txt    # Dependencies
 ├── README.md
-└── TODO.md
 ```
 
 ## ▶️ How to Run
