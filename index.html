@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeNeuron - AI Trading Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --card-bg: rgba(255,255,255,0.9);
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --primary: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: 0 10px 25px rgba(0,0,0,0.1);
+      --border: #e2e8f0;
+    }
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --card-bg: rgba(30,41,59,0.9);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --shadow: 0 10px 35px rgba(0,0,0,0.3);
+      --border: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      margin: 0;
+      padding: 20px;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      background: linear-gradient(135deg, var(--primary), #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header h1 { font-size: 2.5rem; font-weight: 700; margin: 0; }
+    .header p { font-size: 1.2rem; opacity: 0.9; }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .controls { grid-column: 1 / -1; }
+    .btn {
+      background: linear-gradient(135deg, var(--primary), #1d4ed8);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      margin: 0 8px 8px 0;
+    }
+    .btn:hover:not(:disabled) { transform: scale(1.05); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .input-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    #symbol { padding: 12px 16px; font-size: 16px; border: 2px solid var(--border); border-radius: 12px; min-width: 120px; }
+    #symbol:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .signal-container { text-align: center; }
+    .signal {
+      font-size: 1.5rem;
+      font-weight: 700;
+      padding: 20px;
+      border-radius: 16px;
+      margin: 12px 0;
+      animation: slideIn 0.5s ease;
+    }
+    .buy { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
+    .sell { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; }
+    .hold { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+    .confidence-bar { 
+      background: var(--border); 
+      height: 8px; 
+      border-radius: 4px; 
+      overflow: hidden; 
+      margin: 12px 0; 
+    }
+    .confidence-fill { height: 100%; transition: width 1s ease; border-radius: 4px; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 20px; }
+    .metric { font-size: 2rem; font-weight: 700; text-align: center; }
+    .metric-label { opacity: 0.7; font-size: 0.9rem; margin-bottom: 4px; }
+    #chart { height: 450px; width: 100%; border-radius: 16px; }
+    .status { padding: 16px; border-radius: 12px; text-align: center; font-weight: 500; }
+    .status.success { background: rgba(16,185,129,0.1); color: #059669; }
+    .status.error { background: rgba(239,68,68,0.1); color: #dc2626; }
+    .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--border); border-radius: 50%; border-top-color: var(--primary); animation: spin 1s ease-in-out infinite; }
+    .theme-toggle { position: fixed; top: 20px; right: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+    .theme-toggle:hover { transform: scale(1.1); }
+    .stack { text-align: center; opacity: 0.8; font-size: 0.9rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .header h1 { font-size: 2rem; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+    footer { text-align: center; margin-top: 40px; padding: 20px; opacity: 0.7; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+    <i class="fas fa-moon"></i>
+  </button>
+  
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-rocket"></i> TradeNeuron AI Trading</h1>
+      <p>Production ML Trading Dashboard</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card controls">
+        <h3><i class="fas fa-cogs"></i> Quick Controls</h3>
+        <div class="input-group">
+          <input id="symbol" placeholder="Enter symbol e.g. AAPL" value="AAPL">
+          <button class="btn" onclick="fetchData()" id="fetchBtn">
+            <i class="fas fa-download"></i> Fetch Data
+          </button>
+          <button class="btn" onclick="getPrediction()" id="predBtn">
+            <i class="fas fa-brain"></i> AI Signal
+          </button>
+          <button class="btn" onclick="runBacktest()" id="backBtn">
+            <i class="fas fa-chart-line"></i> Backtest
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-bullseye"></i> Live Signal</h3>
+        <div class="signal-container">
+          <div id="signal" class="signal hold">Waiting for AI signal...</div>
+          <div class="confidence-bar">
+            <div id="confidenceFill" class="confidence-fill" style="width: 0%; background: var(--primary);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-trophy"></i> Performance</h3>
+        <div class="metrics-grid">
+          <div>
+            <div class="metric-label">Sharpe Ratio</div>
+            <div id="sharpe" class="metric">--</div>
+          </div>
+          <div>
+            <div class="metric-label">Win Rate</div>
+            <div id="winrate" class="metric">--</div>
+          </div>
+          <div>
+            <div class="metric-label">Total Return</div>
+            <div id="return" class="metric">--</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3><i class="fas fa-chart-candlestick"></i> Price Chart</h3>
+        <div id="chart"></div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-server"></i> API Status</h3>
+        <div id="status" class="status">Checking API...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stack">
+        <h4>Production Stack</h4>
+        <p><i class="fab fa-python"></i> FastAPI + Postgres + ML Ensemble + RL + Docker</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let data = [];
+const API_BASE = '/api/v1';
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.innerHTML = loading ? '<div class="loading"></div>' : btn.dataset.original || btn.innerHTML;
+    }
+
+    function setStatus(msg, type = '') {
+      const status = document.getElementById('status');
+      status.textContent = msg;
+      status.className = `status ${type}`;
+    }
+
+    async function apiCall(endpoint, options = {}) {
+      try {
+        const resp = await fetch(`${API_BASE}${endpoint}`, options);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+      } catch (e) {
+        throw new Error(`API Error: ${e.message}. Is backend running? (run.bat)`);
+      }
+    }
+
+    async function fetchData() {
+      const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+      if (!symbol) return setStatus('Enter symbol', 'error');
+
+      setLoading('fetchBtn', true);
+      try {
+        // Refresh data
+        await apiCall(`/api/v1/data/refresh/${symbol}`, { method: 'POST' });
+        
+        // Fetch historical data for chart
+        const result = await apiCall(`/api/v1/data/${symbol}`);
+        data = result.data || [];
+        
+        setStatus(`✅ Loaded ${data.length} records for ${symbol}`, 'success');
+        plotData();
+        getPrediction();
+      } catch (e) {
+        setStatus(e.message, 'error');
+      } finally {
+        setLoading('fetchBtn', false);
+      }
+    }
+
+    async function getPrediction() {
+      const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+      if (!symbol) return;
+
+      setLoading('predBtn', true);
+      try {
+        const pred = await apiCall(`/api/v1/predictions/${symbol}`, { method: 'POST' });
+        
+        const signalEl = document.getElementById('signal');
+        const signalText = `${pred.signal || 'HOLD'} ${symbol} (${(pred.confidence * 100 || 0).toFixed(1)}%)`;
+        signalEl.textContent = signalText;
+        signalEl.className = `signal ${ (pred.signal || 'hold').toLowerCase() }`;
+        
+        document.getElementById('confidenceFill').style.width = `${(pred.confidence * 100 || 0)}%`;
+        
+        setStatus('✅ Latest AI Signal', 'success');
+      } catch (e) {
+        setStatus(e.message, 'error');
+      } finally {
+        setLoading('predBtn', false);
+      }
+    }
+
+    async function runBacktest() {
+      const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+      if (!symbol) return;
+
+      setLoading('backBtn', true);
+      try {
+        const result = await apiCall(`/api/v1/backtest/${symbol}`, { method: 'POST' });
+        document.getElementById('sharpe').textContent = result.sharpe_ratio?.toFixed(2) ?? '--';
+        document.getElementById('winrate').textContent = result.win_rate ? `${(result.win_rate * 100).toFixed(1)}%` : '--';
+        document.getElementById('return').textContent = result.total_return ? `${(result.total_return * 100).toFixed(1)}%` : '--';
+      } catch (e) {
+        setStatus(e.message, 'error');
+      } finally {
+        setLoading('backBtn', false);
+      }
+    }
+
+    function plotData() {
+      if (data.length < 2) {
+        document.getElementById('chart').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);">No data for chart</div>';
+        return;
+      }
+      
+      const trace = [{
+        x: data.map(d => d.date),
+        open: data.map(d => d.open),
+        high: data.map(d => d.high),
+        low: data.map(d => d.low),
+        close: data.map(d => d.close),
+        type: 'candlestick',
+        name: 'OHLC'
+      }];
+      
+      const layout = {
+        title: { text: `Price Chart - ${data[data.length-1]?.symbol || ''}`, font: { size: 16 } },
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Price' },
+        hovermode: 'x unified'
+      };
+      
+      Plotly.newPlot('chart', trace, layout, { responsive: true });
+    }
+
+    async function checkStatus() {
+      try {
+        const info = await apiCall('/');
+        setStatus(`✅ ${info.message || 'API Ready'}`, 'success');
+        return true;
+      } catch {
+        setStatus('Start API: run.bat or uvicorn app.main:app --reload --port 8001', 'error');
+        return false;
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.dataset.theme === 'dark';
+      document.body.dataset.theme = isDark ? 'light' : 'dark';
+      localStorage.setItem('theme', document.body.dataset.theme);
+      document.querySelector('.theme-toggle i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Init
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.dataset.theme = 'dark';
+      document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+    }
+
+    // Store original btn HTML
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.dataset.original = btn.innerHTML;
+    });
+
+    checkStatus().then(ready => {
+      if (ready) fetchData();
+    });
+    setInterval(checkStatus, 30000); // 30s refresh
+    setInterval(getPrediction, 30000);
+  </script>
+</body>
+</html>
