@@ -1,5 +1,5 @@
 # 📈 TradeNeuron - AI Trading Platform
-
+ 
 ## 📌 Overview
 TradeNeuron is an AI-powered trading platform designed to analyze financial market data and generate intelligent trading insights.  
 The system integrates machine learning, trading strategies, backtesting, and automation to simulate and support real-world trading decisions.
