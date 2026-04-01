@@ -13,7 +13,7 @@ This project demonstrates strong capabilities in **AI, algorithmic trading, and 
 - ML models for market prediction (`ml/`)
 - Reinforcement Learning experimentation (`rl/`)
 - Feature engineering and data preprocessing
-
+    
 ### 📊 Strategy & Backtesting
 - Custom trading strategies (`strategy/`)
 - Historical performance testing (`backtest/`)
