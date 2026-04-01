@@ -32,7 +32,7 @@ This project demonstrates strong capabilities in **AI, algorithmic trading, and 
 - Core app logic (`app/`)
 - Modular and extensible design
 
-
+  
 ## 🛠️ Technologies Used
 - **Language:** Python  
 - **Libraries:** Pandas, NumPy, Scikit-learn  
