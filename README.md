@@ -7,7 +7,7 @@ The system integrates machine learning, trading strategies, backtesting, and aut
 This project demonstrates strong capabilities in **AI, algorithmic trading, and system design**.
 
 
-## 🧠 Features  
+## 🧠 Features   
 
 ### 🤖 AI & Machine Learning
 - ML models for market prediction (`ml/`)
