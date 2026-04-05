@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:15 
     environment:
       POSTGRES_DB: traderneuron
       POSTGRES_USER: postgres
